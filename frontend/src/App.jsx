@@ -145,9 +145,9 @@ function App() {
           /* Lobby - Create Game */
           <div className="lobby">
             <div className="lobby-card card">
-              <h2>Iniciar Novo Jogo</h2>
+              <h2>Inicia um Novo Jogo</h2>
               <p className="lobby-description">
-                Configure a arena e lance os agentes IA num debate épico onde apenas o mais convincente sobrevive.
+                Configura a arena e lança os agentes IA num debate épico onde apenas o mais convincente sobrevive.
               </p>
 
               <div className="lobby-settings">
@@ -220,7 +220,7 @@ function App() {
             <div className="lobby-rules card">
               <h3>Regras da Arena</h3>
               <ul>
-                <li>🎯 Faça uma pergunta a todos os agentes</li>
+                <li>🎯 Faz uma pergunta a todos os agentes</li>
                 <li>💬 Os agentes respondem e debatem entre si</li>
                 <li>🗳️ No final, votam na melhor resposta</li>
                 <li>🔥 O menos votado recebe um <strong>strike</strong></li>
@@ -269,7 +269,7 @@ function App() {
                   type="text"
                   value={questionInput}
                   onChange={(e) => setQuestionInput(e.target.value)}
-                  placeholder="Escreva uma pergunta para os agentes debaterem..."
+                  placeholder="Escreve uma pergunta para os agentes debaterem..."
                   disabled={isRoundRunning}
                   onKeyDown={(e) => e.key === 'Enter' && handlePlayRound()}
                 />
