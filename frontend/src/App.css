@@ -1,0 +1,330 @@
+/* ============================================
+   App-specific Styles
+   ============================================ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: var(--space-lg);
+}
+
+/* Header */
+.app-header {
+  text-align: center;
+  padding: var(--space-xl) 0;
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  font-size: 3rem;
+  margin-bottom: var(--space-sm);
+  animation: fireFlicker 3s ease-in-out infinite;
+}
+
+.tagline {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-lg);
+  color: #fca5a5;
+}
+
+.error-banner button {
+  background: none;
+  color: inherit;
+  font-size: 1.2rem;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+}
+
+.error-banner button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Main */
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Footer */
+.app-footer {
+  text-align: center;
+  padding: var(--space-xl) 0 var(--space-md);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Lobby Styles
+   ============================================ */
+
+.lobby {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-xl);
+  max-width: 900px;
+  margin: 0 auto;
+  animation: fadeIn 0.5s ease;
+}
+
+.lobby-card {
+  padding: var(--space-2xl);
+}
+
+.lobby-card h2 {
+  margin-bottom: var(--space-md);
+  text-align: center;
+}
+
+.lobby-description {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.lobby-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.setting-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.setting-group label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.setting-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.setting-input input {
+  width: 80px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-display);
+}
+
+.btn-adjust {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-adjust:hover:not(:disabled) {
+  background: var(--fire-orange);
+  border-color: var(--fire-orange);
+}
+
+.btn-adjust:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.start-btn {
+  width: 100%;
+  padding: var(--space-lg);
+  font-size: 1.25rem;
+}
+
+/* Rules */
+.lobby-rules {
+  padding: var(--space-xl);
+}
+
+.lobby-rules h3 {
+  margin-bottom: var(--space-lg);
+  text-align: center;
+  color: var(--gold);
+}
+
+.lobby-rules ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.lobby-rules li {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  padding-left: var(--space-sm);
+}
+
+/* ============================================
+   Winner Screen
+   ============================================ */
+
+.winner-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.winner-card {
+  text-align: center;
+  padding: var(--space-2xl) calc(var(--space-2xl) * 2);
+  animation: slideUp 0.5s ease;
+}
+
+.winner-crown {
+  font-size: 5rem;
+  margin-bottom: var(--space-lg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.winner-card h2 {
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.winner-name {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--fire-orange) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-lg);
+}
+
+.winner-message {
+  margin-bottom: var(--space-xl);
+  font-size: 1.1rem;
+}
+
+/* ============================================
+   Arena Wrapper
+   ============================================ */
+
+.arena-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  min-height: 0;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Question Input */
+.question-input-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.question-input-container {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.question-input-container input {
+  flex: 1;
+  padding: var(--space-lg);
+  font-size: 1rem;
+}
+
+.question-input-container .btn {
+  padding: var(--space-lg) var(--space-xl);
+  white-space: nowrap;
+}
+
+/* Quick Questions */
+.quick-questions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.quick-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-right: var(--space-xs);
+}
+
+.quick-btn {
+  font-size: 0.8rem;
+  padding: var(--space-xs) var(--space-md);
+  background: var(--bg-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+}
+
+.quick-btn:hover {
+  background: rgba(255, 107, 53, 0.1);
+  border-color: var(--fire-orange);
+  color: var(--fire-orange);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .app {
+    padding: var(--space-md);
+  }
+
+  .app-header h1 {
+    font-size: 2rem;
+  }
+
+  .lobby {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-card {
+    padding: var(--space-xl);
+  }
+
+  .question-input-container {
+    flex-direction: column;
+  }
+
+  .question-input-container .btn {
+    width: 100%;
+  }
+}
