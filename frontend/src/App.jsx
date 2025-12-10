@@ -21,6 +21,7 @@ function App() {
   // Lobby settings
   const [numAgents, setNumAgents] = useState(4);
   const [maxStrikes, setMaxStrikes] = useState(2);
+  const [showWinnerScreen, setShowWinnerScreen] = useState(false);
 
   // Get agent name from game
   const getAgentName = useCallback((agentId) => {
@@ -40,6 +41,7 @@ function App() {
       setMessages([]);
       setCurrentPhase('waiting');
       setQuestion('');
+      setShowWinnerScreen(false);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -92,20 +94,44 @@ function App() {
         }]);
       },
 
+      onJudgeVote: (judgeVote) => {
+        setCurrentPhase('results');
+        setSpeakingAgent(null);
+        setMessages(prev => [...prev, {
+          agentId: 'judge',
+          agentName: '⚖️ JUIZ SUPREMO',
+          phase: 'judge',
+          voteTarget: getAgentName(judgeVote.target_id),
+          justification: judgeVote.justification,
+          tiedAgents: judgeVote.tied_agents?.map(id => getAgentName(id)).join(', ')
+        }]);
+      },
+
       onPhase: (phase) => {
         if (phase === 'answers_done') {
           setCurrentPhase('debate');
         } else if (phase === 'debate_done') {
           setCurrentPhase('voting');
+        } else if (phase === 'judge') {
+          setCurrentPhase('voting'); // Keep as voting while judge decides
         }
       },
 
       onRoundEnd: (result) => {
-        setCurrentPhase('results');
-        setSpeakingAgent(null);
+        // Stop round first
         setIsRoundRunning(false);
-        setGame(result.game);
+        setSpeakingAgent(null);
         setQuestionInput('');
+
+        // Update game state
+        setGame(result.game);
+
+        // Check if game finished
+        if (result.game?.status === 'finished') {
+          setCurrentPhase('results');
+        } else {
+          setCurrentPhase('results');
+        }
       },
 
       onError: (err) => {
@@ -222,14 +248,15 @@ function App() {
               <ul>
                 <li>🎯 Faz uma pergunta a todos os agentes</li>
                 <li>💬 Os agentes respondem e debatem entre si</li>
-                <li>🗳️ No final, votam na melhor resposta</li>
-                <li>🔥 O menos votado recebe um <strong>strike</strong></li>
+                <li>🗳️ No final, votam na <strong>pior</strong> resposta</li>
+                <li>🔥 O mais votado recebe um <strong>strike</strong></li>
                 <li>💀 Com {maxStrikes} strikes, o agente é <strong>eliminado</strong></li>
+                <li>⚖️ Em caso de empate, o <strong>Juiz Supremo</strong> decide!</li>
                 <li>🏆 O último sobrevivente vence!</li>
               </ul>
             </div>
           </div>
-        ) : isGameFinished && winner ? (
+        ) : isGameFinished && winner && showWinnerScreen ? (
           /* Winner Screen */
           <div className="winner-screen">
             <div className="winner-card card card-glow">
@@ -245,6 +272,7 @@ function App() {
                   setGame(null);
                   setMessages([]);
                   setCurrentPhase('waiting');
+                  setShowWinnerScreen(false);
                 }}
               >
                 🔄 Novo Jogo
@@ -262,44 +290,60 @@ function App() {
               question={question}
             />
 
-            {/* Question Input */}
+            {/* Question Input or Winner Button */}
             <div className="question-input-wrapper">
-              <div className="question-input-container">
-                <input
-                  type="text"
-                  value={questionInput}
-                  onChange={(e) => setQuestionInput(e.target.value)}
-                  placeholder="Escreve uma pergunta para os agentes debaterem..."
-                  disabled={isRoundRunning}
-                  onKeyDown={(e) => e.key === 'Enter' && handlePlayRound()}
-                />
-                <button
-                  className="btn btn-primary"
-                  onClick={handlePlayRound}
-                  disabled={!questionInput.trim() || isRoundRunning}
-                >
-                  {isRoundRunning ? '⏳ Em Debate...' : '⚔️ Lançar Pergunta'}
-                </button>
-              </div>
-
-              {/* Quick Questions */}
-              {!isRoundRunning && (
-                <div className="quick-questions">
-                  <span className="quick-label">Sugestões:</span>
-                  {[
-                    'Qual é o sentido da vida?',
-                    'A IA vai substituir os humanos?',
-                    'Qual é a melhor linguagem de programação?',
-                  ].map((q, i) => (
-                    <button
-                      key={i}
-                      className="quick-btn"
-                      onClick={() => setQuestionInput(q)}
-                    >
-                      {q}
-                    </button>
-                  ))}
+              {isGameFinished ? (
+                /* Game finished - show winner button */
+                <div className="game-finished-section">
+                  <h3>🏆 Jogo Terminado!</h3>
+                  <p>Revê as últimas mensagens e clica para ver o vencedor.</p>
+                  <button
+                    className="btn btn-primary btn-winner"
+                    onClick={() => setShowWinnerScreen(true)}
+                  >
+                    👑 Ver Vencedor
+                  </button>
                 </div>
+              ) : (
+                <>
+                  <div className="question-input-container">
+                    <input
+                      type="text"
+                      value={questionInput}
+                      onChange={(e) => setQuestionInput(e.target.value)}
+                      placeholder="Escreve uma pergunta para os agentes debaterem..."
+                      disabled={isRoundRunning}
+                      onKeyDown={(e) => e.key === 'Enter' && handlePlayRound()}
+                    />
+                    <button
+                      className="btn btn-primary"
+                      onClick={handlePlayRound}
+                      disabled={!questionInput.trim() || isRoundRunning}
+                    >
+                      {isRoundRunning ? '⏳ Em Debate...' : '⚔️ Lançar Pergunta'}
+                    </button>
+                  </div>
+
+                  {/* Quick Questions */}
+                  {!isRoundRunning && (
+                    <div className="quick-questions">
+                      <span className="quick-label">Sugestões:</span>
+                      {[
+                        'Qual é o sentido da vida?',
+                        'A IA vai substituir os humanos?',
+                        'Qual é a melhor linguagem de programação?',
+                      ].map((q, i) => (
+                        <button
+                          key={i}
+                          className="quick-btn"
+                          onClick={() => setQuestionInput(q)}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

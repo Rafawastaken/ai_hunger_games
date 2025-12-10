@@ -105,22 +105,25 @@ func (uc *PlayRoundUseCase) Execute(ctx context.Context, input PlayRoundInput) (
 		}
 	}
 
-	// 4) Determinar quem levou strike (menos votos)
+	// 4) Determinar quem levou strike (MAIS votos = pior resposta)
 	if len(activeAgents) > 0 {
-		minVotes := -1
+		maxVotes := 0
 		for _, agent := range activeAgents {
 			count := votesCount[agent.ID]
-			if minVotes == -1 || count < minVotes {
-				minVotes = count
+			if count > maxVotes {
+				maxVotes = count
 			}
 		}
 
-		for _, agent := range activeAgents {
-			if votesCount[agent.ID] == minVotes {
-				agent.Strikes++
-				if agent.Strikes >= game.MaxStrikes {
-					agent.Eliminated = true
-					round.Eliminated = append(round.Eliminated, agent.ID)
+		// Só dá strike se alguém recebeu pelo menos 1 voto
+		if maxVotes > 0 {
+			for _, agent := range activeAgents {
+				if votesCount[agent.ID] == maxVotes {
+					agent.Strikes++
+					if agent.Strikes >= game.MaxStrikes {
+						agent.Eliminated = true
+						round.Eliminated = append(round.Eliminated, agent.ID)
+					}
 				}
 			}
 		}

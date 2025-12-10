@@ -46,6 +46,28 @@
     color: var(--fire-red);
 }
 
+/* Judge vote - Supreme! */
+.message-bubble.judge {
+    border-color: rgba(139, 92, 246, 0.4);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(251, 191, 36, 0.1));
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+.message-bubble.judge::before {
+    background: linear-gradient(180deg, #8b5cf6, #fbbf24);
+}
+
+.message-bubble.judge .phase-badge {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(251, 191, 36, 0.3));
+    color: #fbbf24;
+    font-weight: 700;
+}
+
+.message-bubble.judge .agent-label {
+    color: #fbbf24;
+    font-size: 1rem;
+}
+
 /* Streaming state */
 .message-bubble.streaming {
     border-color: var(--agent-color);

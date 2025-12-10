@@ -16,6 +16,7 @@ type GroqService interface {
 	GenerateAnswer(ctx context.Context, game *domain.Game, agent *domain.Agent, question string) (string, error)
 	GenerateDebateMessage(ctx context.Context, game *domain.Game, round *domain.Round, agent *domain.Agent) (string, error)
 	GenerateVote(ctx context.Context, game *domain.Game, round *domain.Round, agent *domain.Agent) (targetID string, justification string, err error)
+	GenerateJudgeVote(ctx context.Context, game *domain.Game, round *domain.Round, tiedAgents []string) (targetID string, justification string, err error)
 }
 
 type groqService struct {
@@ -45,8 +46,9 @@ type chatMessage struct {
 }
 
 type chatRequest struct {
-	Model    string        `json:"model"`
-	Messages []chatMessage `json:"messages"`
+	Model       string        `json:"model"`
+	Messages    []chatMessage `json:"messages"`
+	Temperature float64       `json:"temperature"`
 }
 
 type chatResponse struct {
@@ -67,8 +69,9 @@ const (
 
 func (s *groqService) callChat(ctx context.Context, messages []chatMessage) (string, error) {
 	reqBody := chatRequest{
-		Model:    s.model,
-		Messages: messages,
+		Model:       s.model,
+		Messages:    messages,
+		Temperature: 0.8, // Mais criatividade e variação nas respostas
 	}
 	buf, err := json.Marshal(reqBody)
 	if err != nil {
@@ -270,21 +273,20 @@ func (s *groqService) GenerateVote(ctx context.Context, game *domain.Game, round
 		debateSummary.WriteString(fmt.Sprintf("%s: \"%s\"\n", d.AgentID, d.Text))
 	}
 
-	system := fmt.Sprintf(`És o %s. Chegou a hora de votar no agente com a MELHOR resposta.
-A tua própria sobrevivência depende de seres esperto aqui!
+	system := fmt.Sprintf(`És o %s. Chegou a hora de votar na PIOR resposta.
+Quem receber mais votos leva um STRIKE e fica mais perto da eliminação!
 
 REGRAS DE VOTAÇÃO:
 1. NÃO PODES votar em ti próprio (%s) - isso é batota!
-2. Vota em quem REALMENTE te impressionou - não sejas falso.
-3. A tua justificação deve ser HONESTA e HUMANA (ex: "Gostei como o agent-2 foi direto ao ponto", "O agent-3 deu o melhor argumento sobre X")
+2. Vota em quem deu a resposta mais FRACA, VAGA ou MAL ARGUMENTADA.
+3. A tua justificação deve ser HONESTA (ex: "O agent-2 foi muito vago", "O agent-3 não respondeu à pergunta")
 
 ESTRATÉGIA:
-- Quem me poderia ajudar em rondas futuras?
-- Quem é demasiado forte e convém enfraquecer?
-- Quem me atacou e merece "perder" o meu voto?
+- Quem deu a pior resposta?
+- Quem é uma ameaça e convém eliminar?
+- Quem te atacou no debate e merece ser castigado?
 
-RESPONDE APENAS com JSON: {"vote_for": "<agent-X>", "justificacao": "<frase curta e humana>"}
-A justificação deve soar natural, como se fosses uma pessoa a explicar o teu voto a um amigo.`,
+RESPONDE APENAS com JSON: {"vote_for": "<agent-X>", "justificacao": "<frase curta explicando porque é a pior>"}`,
 		agent.Name, agent.ID)
 
 	user := fmt.Sprintf(`Pergunta debatida: "%s"
@@ -293,7 +295,7 @@ Respostas:
 %s
 Durante o debate:
 %s
-Quem merece o teu voto? (Lembra-te: não podes votar em ti, %s)`,
+Quem deu a PIOR resposta? (Lembra-te: não podes votar em ti, %s)`,
 		round.Question,
 		answerSummary.String(),
 		debateSummary.String(),
@@ -331,6 +333,82 @@ Quem merece o teu voto? (Lembra-te: não podes votar em ti, %s)`,
 		if vr.Justification == "" {
 			vr.Justification = "Escolhi outro agente para cumprir as regras do jogo."
 		}
+	}
+
+	return vr.TargetID, vr.Justification, nil
+}
+
+// ==== 4) Voto do Juiz (desempate) ====
+
+func (s *groqService) GenerateJudgeVote(ctx context.Context, game *domain.Game, round *domain.Round, tiedAgents []string) (string, string, error) {
+	var answerSummary bytes.Buffer
+	for _, a := range round.Answers {
+		answerSummary.WriteString(fmt.Sprintf("%s: \"%s\"\n\n", a.AgentID, a.Text))
+	}
+
+	var debateSummary bytes.Buffer
+	for _, d := range round.Debate {
+		debateSummary.WriteString(fmt.Sprintf("%s: \"%s\"\n", d.AgentID, d.Text))
+	}
+
+	tiedList := strings.Join(tiedAgents, ", ")
+
+	system := fmt.Sprintf(`És o JUIZ SUPREMO do AI Hunger Games. 🔥
+Houve um EMPATE na votação! Os seguintes agentes receberam o mesmo número de votos: %s
+
+A tua decisão é FINAL e INCONTESTÁVEL. Tens de escolher UM deles para receber o strike.
+
+CRITÉRIOS DE JULGAMENTO:
+1. Quem deu a resposta mais FRACA ou VAGA?
+2. Quem defendeu pior a sua posição no debate?
+3. Quem foi menos convincente no geral?
+
+Sê JUSTO mas IMPLACÁVEL. Alguém TEM de levar o strike!
+
+RESPONDE APENAS com JSON: {"vote_for": "<agent-X>", "justificacao": "<decisão do juiz em 1 frase>"}`, tiedList)
+
+	user := fmt.Sprintf(`Pergunta debatida: "%s"
+
+Respostas:
+%s
+Durante o debate:
+%s
+Os empatados são: %s
+
+Qual deles merece o strike? Decide agora, Juiz!`,
+		round.Question,
+		answerSummary.String(),
+		debateSummary.String(),
+		tiedList)
+
+	raw, err := s.callChat(ctx, []chatMessage{
+		{Role: "system", Content: system},
+		{Role: "user", Content: user},
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	cleaned := cleanJSONResponse(raw)
+
+	var vr voteResult
+	if err := json.Unmarshal([]byte(cleaned), &vr); err != nil {
+		return "", "", fmt.Errorf("erro a fazer parse do voto do juiz: %w (raw=%s)", err, cleaned)
+	}
+
+	// Verificar se o juiz votou num dos empatados
+	validVote := false
+	for _, tied := range tiedAgents {
+		if vr.TargetID == tied {
+			validVote = true
+			break
+		}
+	}
+
+	if !validVote && len(tiedAgents) > 0 {
+		// Fallback: escolher o primeiro empatado
+		vr.TargetID = tiedAgents[0]
+		vr.Justification = "O Juiz decidiu por este agente."
 	}
 
 	return vr.TargetID, vr.Justification, nil

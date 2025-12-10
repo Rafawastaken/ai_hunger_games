@@ -62,6 +62,7 @@ export function playRoundStream(gameId, question, callbacks) {
         onAnswer = () => { },
         onDebate = () => { },
         onVote = () => { },
+        onJudgeVote = () => { },
         onPhase = () => { },
         onRoundEnd = () => { },
         onError = () => { }
@@ -108,6 +109,9 @@ export function playRoundStream(gameId, question, callbacks) {
                                     break;
                                 case 'vote':
                                     onVote(parsed);
+                                    break;
+                                case 'judge_vote':
+                                    onJudgeVote(parsed);
                                     break;
                                 case 'phase':
                                     onPhase(parsed.phase);

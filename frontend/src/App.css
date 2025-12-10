@@ -233,6 +233,34 @@
   font-size: 1.1rem;
 }
 
+/* Game Finished Section */
+.game-finished-section {
+  text-align: center;
+  padding: var(--space-xl);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(255, 107, 53, 0.1));
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: var(--radius-lg);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.game-finished-section h3 {
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin-bottom: var(--space-sm);
+}
+
+.game-finished-section p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.btn-winner {
+  font-size: 1.25rem;
+  padding: var(--space-lg) var(--space-2xl);
+  background: linear-gradient(135deg, var(--gold), var(--fire-orange));
+  animation: fireFlicker 2s ease-in-out infinite;
+}
+
 /* ============================================
    Arena Wrapper
    ============================================ */

@@ -331,22 +331,60 @@ func (h *GameHandler) handlePlayRoundStream(w http.ResponseWriter, r *http.Reque
 		_ = sseWriteEvent(w, flusher, "vote", v)
 	}
 
-	// 4) Determinar strikes (igual ao usecase normal)
+	// 4) Determinar strikes (MAIS votos = pior resposta)
 	if len(activeAgents) > 0 {
-		minVotes := -1
+		maxVotes := 0
 		for _, agent := range activeAgents {
 			count := votesCount[agent.ID]
-			if minVotes == -1 || count < minVotes {
-				minVotes = count
+			if count > maxVotes {
+				maxVotes = count
 			}
 		}
 
-		for _, agent := range activeAgents {
-			if votesCount[agent.ID] == minVotes {
-				agent.Strikes++
-				if agent.Strikes >= game.MaxStrikes {
-					agent.Eliminated = true
-					round.Eliminated = append(round.Eliminated, agent.ID)
+		// Só dá strike se alguém recebeu pelo menos 1 voto
+		if maxVotes > 0 {
+			// Encontrar todos os empatados com max votos
+			var tiedAgents []string
+			for _, agent := range activeAgents {
+				if votesCount[agent.ID] == maxVotes {
+					tiedAgents = append(tiedAgents, agent.ID)
+				}
+			}
+
+			var strikeTarget string
+
+			// Se houver empate, chamar o Juiz!
+			if len(tiedAgents) > 1 {
+				_ = sseWriteEvent(w, flusher, "phase", map[string]string{"phase": "judge"})
+
+				targetID, justification, err := h.groqSvc.GenerateJudgeVote(ctx, game, round, tiedAgents)
+				if err != nil {
+					_ = sseWriteEvent(w, flusher, "error", map[string]string{"error": err.Error()})
+					return
+				}
+				strikeTarget = targetID
+
+				// Enviar evento do voto do juiz
+				_ = sseWriteEvent(w, flusher, "judge_vote", map[string]interface{}{
+					"target_id":     targetID,
+					"justification": justification,
+					"tied_agents":   tiedAgents,
+				})
+			} else if len(tiedAgents) == 1 {
+				strikeTarget = tiedAgents[0]
+			}
+
+			// Aplicar o strike ao alvo
+			if strikeTarget != "" {
+				for _, agent := range activeAgents {
+					if agent.ID == strikeTarget {
+						agent.Strikes++
+						if agent.Strikes >= game.MaxStrikes {
+							agent.Eliminated = true
+							round.Eliminated = append(round.Eliminated, agent.ID)
+						}
+						break
+					}
 				}
 			}
 		}

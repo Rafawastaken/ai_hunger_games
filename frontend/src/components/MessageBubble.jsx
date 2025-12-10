@@ -12,6 +12,10 @@ const PHASE_STYLES = {
     vote: {
         label: 'Voto',
         className: 'vote'
+    },
+    judge: {
+        label: 'Juiz Supremo',
+        className: 'judge'
     }
 };
 
@@ -51,14 +55,16 @@ export function MessageBubble({
             </div>
 
             <div className="message-content">
-                {phase === 'vote' ? (
+                {(phase === 'vote' || phase === 'judge') ? (
                     <div className="vote-content">
                         <div className="vote-target">
-                            <span className="vote-label">Votou em:</span>
+                            <span className="vote-label">
+                                {phase === 'judge' ? '⚖️ Strike para:' : 'Votou em:'}
+                            </span>
                             <span className="vote-value">{voteTarget}</span>
                         </div>
                         {justification && (
-                            <p className="vote-justification">{justification}</p>
+                            <p className="vote-justification">"{justification}"</p>
                         )}
                     </div>
                 ) : (
